@@ -1,0 +1,71 @@
+#!/bin/bash
+#LOG_FILE=/var/log/archautoinstall_no_env.log
+ERR_FILE=/var/log/archautoinstall_no_env_err.log
+#exec 1> $LOG_FILE
+exec 2> $ERR_FILE
+
+# configuration automatique de l'horodatage du système
+timedatectl set-ntp true
+
+#Mirror list
+reflector -c France -a 6 --sort rate --save /etc/pacman.d/mirrorlist
+pacman -Syy
+
+#Formatage des partitions
+mkfs.fat -F32 /dev/sda2
+mkfs.ext4 -O "^has_journal" /dev/sda3        # /
+
+# montage des partitions
+mount /dev/sda3 /mnt
+mkdir /mnt/boot
+mount /dev/sda2 /mnt/boot
+
+# installation de base de Arch
+pacstrap /mnt base linux linux-firmware vim git
+
+# création du fichier fstab qui décrit les points de montage
+genfstab -U -p /mnt >> /mnt/etc/fstab
+
+# on rentre dans le système
+arch-chroot /mnt
+
+# configuration du nom de la machine et de la timezone
+echo zarchusb >> /etc/hostname
+echo -e '127.0.0.1       localhost\n::1       localhost\n127.0.1.1       zarchusb.localdomain zarchusb' >> /etc/hosts
+ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+hwclock --systohc
+
+# langues
+sed -i 's|#(fr_FR.UTF-8)|(fr_FR.UTF-8)|g' /etc/locale.gen
+vim /etc/locale.gen # décommenter fr_FR et en_US
+locale-gen
+echo 'LANG="fr_FR.UTF-8"' >> /etc/locale.conf
+export LANG=fr_FR.UTF-8
+echo KEYMAP=fr >> /etc/vconsole.conf
+
+# création du mdp root
+passwd -d root
+
+# création d'un environnement qui se chargera en mémoire au boot
+sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|g' /etc/mkinitcpio.conf
+mkinitcpio -p linux
+
+# Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
+# ce qui n'a rien à voir avec la petite bestiole jaune.
+pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools git bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi
+
+# Installation du bootloader GRUB.
+grub-install --target=i386-pc --boot-directory=/boot /dev/sda
+grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --recheck
+grub-mkconfig -o /boot/grub/grub.cfg # création du fichier de configuration GRUB
+
+#Activation des services
+systemctl enable networkManager
+systemctl enable bluetooth
+systemctl enable cups
+
+#configguration storage
+sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
+sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
+
+
