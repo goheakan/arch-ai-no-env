@@ -4,68 +4,96 @@ ERR_FILE=/var/log/archautoinstall_no_env_err.log
 #exec 1> $LOG_FILE
 exec 2> $ERR_FILE
 
-# configuration automatique de l'horodatage du système
+#couleur du shell
+BLUE="\033[1;34m"
+BKGGREEN="\033[1;42m"
+YELLOW="\033[1;33m"
+RED="\033[0;31m"
+CYAN="\033[0;36m"
+ENDCOLOR="\033[0m"
+
+
+echo -e "${CYAN}Configuration automatique de l'horodatage du système...${ENDCOLOR}"
 timedatectl set-ntp true
 
-#Mirror list
+echo -e "${CYAN}Mise à jour de la Mirrorlist...${ENDCOLOR}"
 reflector -c France -a 6 --sort rate --save /etc/pacman.d/mirrorlist
 pacman -Syy
 
 #Formatage des partitions
+echo -e "${CYAN}Formatage des partitions...${ENDCOLOR}"
 mkfs.fat -F32 /dev/sda2
 mkfs.ext4 -O "^has_journal" /dev/sda3        # /
 
 # montage des partitions
+echo -e "${CYAN}Montage des partitions...${ENDCOLOR}"
 mount /dev/sda3 /mnt
 mkdir /mnt/boot
 mount /dev/sda2 /mnt/boot
 
 # installation de base de Arch
+echo -e "${CYAN}Installation des paquets de base avec pacstrap...${ENDCOLOR}"
 pacstrap /mnt base linux linux-firmware vim git
 
 # création du fichier fstab qui décrit les points de montage
+echo -e "${CYAN}Génération de fstab...${ENDCOLOR}"
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
 # on rentre dans le système
+echo -e "${CYAN}Arch-Chroot...${ENDCOLOR}"
 arch-chroot /mnt
 
 # configuration du nom de la machine et de la timezone
+echo -e "${CYAN}Configuration du nom de la machine...${ENDCOLOR}"
 echo zarchusb >> /etc/hostname
+echo -e "${CYAN}Configuration du nom de localhost...${ENDCOLOR}"
 echo -e '127.0.0.1       localhost\n::1       localhost\n127.0.1.1       zarchusb.localdomain zarchusb' >> /etc/hosts
+echo -e "${CYAN}Configuration du nom de la tiezone...${ENDCOLOR}"
 ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 hwclock --systohc
 
 # langues
+echo -e "${CYAN}Configuration de la langue...${ENDCOLOR}"
 sed -i 's|#(fr_FR.UTF-8)|(fr_FR.UTF-8)|g' /etc/locale.gen
-vim /etc/locale.gen # décommenter fr_FR et en_US
 locale-gen
 echo 'LANG="fr_FR.UTF-8"' >> /etc/locale.conf
 export LANG=fr_FR.UTF-8
+echo -e "${CYAN}Configuration du clavier...${ENDCOLOR}"
 echo KEYMAP=fr >> /etc/vconsole.conf
 
 # création du mdp root
+echo -e "${CYAN}Désactivation du mot de passe root...${ENDCOLOR}"
 passwd -d root
 
 # création d'un environnement qui se chargera en mémoire au boot
+echo -e "${CYAN}Création d'un environnement qui se chargera en mémoire au boot...${ENDCOLOR}"
 sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|g' /etc/mkinitcpio.conf
 mkinitcpio -p linux
 
 # Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
 # ce qui n'a rien à voir avec la petite bestiole jaune.
+echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
 pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools git bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi
 
 # Installation du bootloader GRUB.
+echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
 grub-install --target=i386-pc --boot-directory=/boot /dev/sda
 grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --recheck
 grub-mkconfig -o /boot/grub/grub.cfg # création du fichier de configuration GRUB
 
 #Activation des services
+echo -e "${CYAN}Activations des services...${ENDCOLOR}"
 systemctl enable networkManager
 systemctl enable bluetooth
 systemctl enable cups
 
 #configguration storage
+echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
 sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
 sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
+
+echo -e "${BKGGREEN}Installation terminées${ENDCOLOR}"
+
+exit 0
 
 
