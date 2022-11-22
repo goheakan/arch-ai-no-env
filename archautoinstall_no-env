@@ -39,20 +39,9 @@ pacstrap /mnt base linux linux-firmware vim git
 echo -e "${CYAN}Génération de fstab...${ENDCOLOR}"
 genfstab -U -p /mnt >> /mnt/etc/fstab
 
-# 2ème partie du script qui s'exécute dans chroot
-cat <<EOF > /mnt/root/part2.sh
-
-#couleur du shell
-BLUE="\033[1;34m"
-BKGGREEN="\033[1;42m"
-YELLOW="\033[1;33m"
-RED="\033[0;31m"
-CYAN="\033[0;36m"
-ENDCOLOR="\033[0m"
-
 # on rentre dans le système
 echo -e "${CYAN}Arch-Chroot...${ENDCOLOR}"
-arch-chroot /mnt /root/part2.sh
+arch-chroot /mnt /bin/bash -x << EOF
 
 # configuration du nom de la machine et de la timezone
 echo -e "${CYAN}Configuration du nom de la machine...${ENDCOLOR}"
@@ -103,15 +92,8 @@ echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
 sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
 sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
 
-exit
 EOF
 
-# on rentre dans le système
-echo -e "${CYAN}Arch-Chroot...${ENDCOLOR}"
-arch-chroot /mnt /root/part2.sh
-
-echo -e "${BKGGREEN}Installation terminées${ENDCOLOR}"
+echo -e "${BKGGREEN}Installation terminée${ENDCOLOR}"
 
 exit 0
-
-
