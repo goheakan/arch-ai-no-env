@@ -12,6 +12,7 @@ RED="\033[0;31m"
 CYAN="\033[0;36m"
 ENDCOLOR="\033[0m"
 
+echo -e "${BKGGREEN}Installation de Arch Linux sur clé USB${ENDCOLOR}"
 
 echo -e "${CYAN}Configuration automatique de l'horodatage du système...${ENDCOLOR}"
 timedatectl set-ntp true
@@ -20,7 +21,10 @@ echo -e "${CYAN}Mise à jour de la Mirrorlist...${ENDCOLOR}"
 reflector -c France -a 6 --sort rate --save /etc/pacman.d/mirrorlist
 pacman -Syy
 
-#Formatage des partitions
+#Création et Formatage des partitions
+echo -e "${CYAN}Création des partitions...${ENDCOLOR}"
+sgdisk -o -n 1:0:+10M -t 1:EF02 -n 2:0:+500M -t 2:EF00 -n 3:0:0 -t 3:8300 /dev/sda
+
 echo -e "${CYAN}Formatage des partitions...${ENDCOLOR}"
 mkfs.fat -F32 /dev/sda2
 mkfs.ext4 -O "^has_journal" /dev/sda3        # /
@@ -48,7 +52,7 @@ echo -e "${CYAN}Configuration du nom de la machine...${ENDCOLOR}"
 echo zarchusb >> /etc/hostname
 echo -e "${CYAN}Configuration du nom de localhost...${ENDCOLOR}"
 echo -e '127.0.0.1       localhost\n::1       localhost\n127.0.1.1       zarchusb.localdomain zarchusb' >> /etc/hosts
-echo -e "${CYAN}Configuration du nom de la tiezone...${ENDCOLOR}"
+echo -e "${CYAN}Configuration du nom de la timezone...${ENDCOLOR}"
 ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 hwclock --systohc
 
@@ -77,7 +81,7 @@ pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_
 
 # Installation du bootloader GRUB.
 echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
-grub-install --target=i386-pc --boot-directory=/boot /dev/sda
+grub-install --target=i386-pc --boot-directory=/boot /dev/sda --recheck
 grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --recheck
 grub-mkconfig -o /boot/grub/grub.cfg # création du fichier de configuration GRUB
 
