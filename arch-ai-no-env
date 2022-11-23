@@ -91,6 +91,8 @@ systemctl enable cups
 echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
 sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
 sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
+usbuuid="$(blkid | awk '/^\/dev\/sda3/' | cut -d ' ' -f2 | sed 's|"||g')"
+sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet '${usbuuid}'"|' /etc/default/grub
 
 EOF
 
