@@ -1,6 +1,6 @@
 #!/bin/bash
-#LOG_FILE=/var/log/archautoinstall_no_env.log
-ERR_FILE=/var/log/archautoinstall_no_env_err.log
+#LOG_FILE=/var/log/garch-repair_env.log
+ERR_FILE=/var/log/garch-repair_err.log
 #exec 1> $LOG_FILE
 exec 2> $ERR_FILE
 
@@ -13,7 +13,7 @@ CYAN="\033[0;36m"
 ENDCOLOR="\033[0m"
 
 #########################################ZSHRC##################################################################
-zshrcfile="
+zshrcfile=$(cat <<EOF
 # ~/.zshrc file for zsh interactive shells.
 # see /usr/share/doc/zsh/examples/zshrc for examples
 
@@ -277,7 +277,8 @@ if [ -z $DISPLAY ] && [ "$(tty)" = "/dev/tty1" ]
 then
     startx
 fi
-"
+EOF
+)
 #########################################ZSHRC##################################################################
 
 
