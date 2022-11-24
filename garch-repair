@@ -344,8 +344,6 @@ echo -e "${CYAN}Création d'un environnement qui se chargera en mémoire au boot
 sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|g' /etc/mkinitcpio.conf
 mkinitcpio -p linux
 
-# Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
-# ce qui n'a rien à voir avec la petite bestiole jaune.
 echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
 pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel mousepad kate zsh zsh-syntax-highlighting zsh-autosuggestions ufw htop testdisk smartmontools python-pipenv
 
@@ -370,23 +368,23 @@ sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAU
 
 
 #installation de l'environnement xorg+xinit+xfce
-#echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
-#pacman -S --noconfirm --needed xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller network-manager-applet leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
+echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
+pacman -S --noconfirm --needed xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller network-manager-applet leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
 
-#echo -e "${CYAN}Instalation de l'AUR YAY...${ENDCOLOR}"
-#git clone https://aur.archlinux.org/yay.git
-#cd yay
-#makepkg -si
-#cd
-#rm -rf yay/
+echo -e "${CYAN}Instalation de l'AUR YAY...${ENDCOLOR}"
+git clone https://aur.archlinux.org/yay.git
+cd yay
+makepkg -si
+cd
+rm -rf yay/
 
-#echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
-#cp /etc/X11/xinit/xinitrc /root/.xinitrc
-#sed -i 's|twm &|#twm &|' /root/.xinitrc
-#sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
-#sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
-#sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
-#echo "exec startxfce4" >> /root/.xinitrc
+echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
+cp /etc/X11/xinit/xinitrc /root/.xinitrc
+sed -i 's|twm &|#twm &|' /root/.xinitrc
+sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
+sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
+sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
+echo "exec startxfce4" >> /root/.xinitrc
 
 echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
 echo "${zshrcfile}" > /root/.zshrc
@@ -395,8 +393,8 @@ sudo sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
 echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
 ufw enable
 
-#echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
-#yay -S --nocofnirm brave
+echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
+yay -S --nocofnirm brave
 
 exit
 
