@@ -292,18 +292,18 @@ reflector -c France -a 6 --sort rate --save /etc/pacman.d/mirrorlist
 pacman -Syy
 
 #Création et Formatage des partitions
-echo -e "${CYAN}Création des partitions sur \/dev\/'${1}'...${ENDCOLOR}"
-sgdisk -o -n 1:0:+10M -t 1:EF02 -n 2:0:+500M -t 2:EF00 -n 3:0:0 -t 3:8300 /dev/'${1}'
+echo -e "${CYAN}Création des partitions sur /dev/${1}...${ENDCOLOR}"
+sgdisk -o -n 1:0:+10M -t 1:EF02 -n 2:0:+500M -t 2:EF00 -n 3:0:0 -t 3:8300 /dev/${1}
 
 echo -e "${CYAN}Formatage des partitions...${ENDCOLOR}"
-mkfs.fat -F32 /dev/'${1}'2
-mkfs.ext4 -O "^has_journal" /dev/'${1}'3        # /
+mkfs.fat -F32 /dev/${1}2
+mkfs.ext4 -O "^has_journal" /dev/${1}3        # /
 
 # montage des partitions
 echo -e "${CYAN}Montage des partitions...${ENDCOLOR}"
-mount /dev/'${1}'3 /mnt
+mount /dev/${1}3 /mnt
 mkdir /mnt/boot
-mount /dev/'${1}'2 /mnt/boot
+mount /dev/${1}2 /mnt/boot
 
 # installation de base de Arch
 echo -e "${CYAN}Installation des paquets de base avec pacstrap...${ENDCOLOR}"
@@ -347,7 +347,7 @@ mkinitcpio -p linux
 # Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
 # ce qui n'a rien à voir avec la petite bestiole jaune.
 echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
-pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools git bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi
+pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools git bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel
 
 # Installation du bootloader GRUB.
 echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
