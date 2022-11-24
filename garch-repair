@@ -347,7 +347,7 @@ mkinitcpio -p linux
 # Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
 # ce qui n'a rien à voir avec la petite bestiole jaune.
 echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
-pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools git bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel
+pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel mousepad kate zsh zsh-syntax-highlighting zsh-autosuggestions dconf-editor ufw htop timeshift testdisk smartmontools preload tor-browser scrcpy python-pipenv
 
 # Installation du bootloader GRUB.
 echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
@@ -368,24 +368,25 @@ sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
 usbuuid="$(blkid | awk '/^\/dev\/sda3/' | cut -d ' ' -f2 | sed 's|"||g')"
 sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet '${usbuuid}'"|' /etc/default/grub
 
+
 #installation de l'environnement xorg+xinit+xfce
-echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
-pacman -S --noconfirm --needed xorg xorg-xinit xfce4 mousepad kate parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller network-manager-applet leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk zsh zsh-syntax-highlighting zsh-autosuggestions dconf-editor ufw htop timeshift testdisk smartmontools preload tor-browser scrcpy python-pipenv
+#echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
+#pacman -S --noconfirm --needed xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller network-manager-applet leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
 
-echo -e "${CYAN}Instalation de l'AUR YAY...${ENDCOLOR}"
-git clone https://aur.archlinux.org/yay.git
-cd yay
-makepkg -si
-cd
-rm -rf yay/
+#echo -e "${CYAN}Instalation de l'AUR YAY...${ENDCOLOR}"
+#git clone https://aur.archlinux.org/yay.git
+#cd yay
+#makepkg -si
+#cd
+#rm -rf yay/
 
-echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
-cp /etc/X11/xinit/xinitrc /root/.xinitrc
-sed -i 's|twm &|#twm &|' /root/.xinitrc
-sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
-sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
-sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
-echo "exec startxfce4" >> /root/.xinitrc
+#echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
+#cp /etc/X11/xinit/xinitrc /root/.xinitrc
+#sed -i 's|twm &|#twm &|' /root/.xinitrc
+#sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
+#sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
+#sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
+#echo "exec startxfce4" >> /root/.xinitrc
 
 echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
 echo '${zshrcfile}' > /root/.zshrc
@@ -394,8 +395,8 @@ sudo sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
 echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
 ufw enable
 
-echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
-yay -S --nocofnirm brave
+#echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
+#yay -S --nocofnirm brave
 
 exit
 
