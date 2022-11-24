@@ -347,7 +347,7 @@ mkinitcpio -p linux
 # Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
 # ce qui n'a rien à voir avec la petite bestiole jaune.
 echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
-pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel mousepad kate zsh zsh-syntax-highlighting zsh-autosuggestions dconf-editor ufw htop timeshift testdisk smartmontools preload tor-browser scrcpy python-pipenv
+pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel mousepad kate zsh zsh-syntax-highlighting zsh-autosuggestions ufw htop testdisk smartmontools python-pipenv
 
 # Installation du bootloader GRUB.
 echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
@@ -389,7 +389,7 @@ sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAU
 #echo "exec startxfce4" >> /root/.xinitrc
 
 echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
-echo '${zshrcfile}' > /root/.zshrc
+echo ${zshrcfile} > /root/.zshrc
 sudo sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
 
 echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
