@@ -12,8 +12,130 @@ RED="\033[0;31m"
 CYAN="\033[0;36m"
 ENDCOLOR="\033[0m"
 
+
+
+echo -e "${BKGGREEN}Installation de Arch Linux sur clé USB${ENDCOLOR}"
+
+echo -e "${CYAN}Configuration automatique de l'horodatage du système...${ENDCOLOR}"
+timedatectl set-ntp true
+
+echo -e "${CYAN}Mise à jour de la Mirrorlist...${ENDCOLOR}"
+reflector -c France -a 6 --sort rate --save /etc/pacman.d/mirrorlist
+pacman -Syy
+
+#Création et Formatage des partitions
+echo -e "${CYAN}Création des partitions sur /dev/${1}...${ENDCOLOR}"
+sgdisk -o -n 1:0:+10M -t 1:EF02 -n 2:0:+500M -t 2:EF00 -n 3:0:0 -t 3:8300 /dev/${1}
+
+echo -e "${CYAN}Formatage des partitions...${ENDCOLOR}"
+mkfs.fat -F32 /dev/${1}2
+mkfs.ext4 -O "^has_journal" /dev/${1}3        # /
+
+# montage des partitions
+echo -e "${CYAN}Montage des partitions...${ENDCOLOR}"
+mount /dev/${1}3 /mnt
+mkdir /mnt/boot
+mount /dev/${1}2 /mnt/boot
+
+# installation de base de Arch
+echo -e "${CYAN}Installation des paquets de base avec pacstrap...${ENDCOLOR}"
+pacstrap /mnt base linux linux-firmware vim git
+
+# création du fichier fstab qui décrit les points de montage
+echo -e "${CYAN}Génération de fstab...${ENDCOLOR}"
+genfstab -U -p /mnt >> /mnt/etc/fstab
+
+# on rentre dans le système
+echo -e "${CYAN}Arch-Chroot...${ENDCOLOR}"
+arch-chroot /mnt /bin/bash -x << EOF
+
+# configuration du nom de la machine et de la timezone
+echo -e "${CYAN}Configuration du nom de la machine...${ENDCOLOR}"
+echo zarchusb >> /etc/hostname
+echo -e "${CYAN}Configuration du nom de localhost...${ENDCOLOR}"
+echo -e '127.0.0.1       localhost\n::1       localhost\n127.0.1.1       zarchusb.localdomain zarchusb' >> /etc/hosts
+echo -e "${CYAN}Configuration du nom de la timezone...${ENDCOLOR}"
+ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
+hwclock --systohc
+
+# langues
+echo -e "${CYAN}Configuration de la langue...${ENDCOLOR}"
+sed -i 's|#(fr_FR.UTF-8)|(fr_FR.UTF-8)|g' /etc/locale.gen
+locale-gen
+echo 'LANG="fr_FR.UTF-8"' >> /etc/locale.conf
+export LANG=fr_FR.UTF-8
+echo -e "${CYAN}Configuration du clavier...${ENDCOLOR}"
+echo KEYMAP=fr >> /etc/vconsole.conf
+
+# création du mdp root
+echo -e "${CYAN}Désactivation du mot de passe root...${ENDCOLOR}"
+passwd -d root
+
+# création d'un environnement qui se chargera en mémoire au boot
+echo -e "${CYAN}Création d'un environnement qui se chargera en mémoire au boot...${ENDCOLOR}"
+sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|g' /etc/mkinitcpio.conf
+mkinitcpio -p linux
+
+# Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
+# ce qui n'a rien à voir avec la petite bestiole jaune.
+echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
+pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel mousepad kate zsh zsh-syntax-highlighting zsh-autosuggestions ufw htop testdisk smartmontools
+
+# Installation du bootloader GRUB.
+echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
+grub-install --target=i386-pc --boot-directory=/boot /dev/sda --recheck
+grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --recheck
+grub-mkconfig -o /boot/grub/grub.cfg # création du fichier de configuration GRUB
+
+#Activation des services
+echo -e "${CYAN}Activations des services...${ENDCOLOR}"
+systemctl enable NetworkManager
+systemctl enable bluetooth
+systemctl enable cups
+
+#configguration storage
+echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
+sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
+sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
+usbuuid="$(blkid | awk '/^\/dev\/sda3/' | cut -d ' ' -f2 | sed 's|"||g')"
+sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet '${usbuuid}'"|' /etc/default/grub
+
+
+#installation de l'environnement xorg+xinit+xfce
+#echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
+#pacman -S --noconfirm --needed xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
+
+#echo -e "${CYAN}Instalation de l'AUR YAY...${ENDCOLOR}"
+#git clone https://aur.archlinux.org/yay.git
+#cd yay
+#makepkg -si
+#cd
+#rm -rf yay/
+
+#echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
+#cp /etc/X11/xinit/xinitrc /root/.xinitrc
+#sed -i 's|twm &|#twm &|' /root/.xinitrc
+#sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
+#sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
+#sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
+#echo "exec startxfce4" >> /root/.xinitrc
+
+echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
+sudo sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
+
+echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
+ufw enable
+
+#echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
+#yay -S --nocofnirm brave
+
+exit
+
+EOF
+
 #########################################ZSHRC##################################################################
-$zshrcfile=$(cat <<"EOF"
+echo -e "${CYAN}Ajout du fichier .zshrc...${ENDCOLOR}"
+cat > /mnt/root/.zshrc <<"EOF"
 # ~/.zshrc file for zsh interactive shells.
 # see /usr/share/doc/zsh/examples/zshrc for examples
 
@@ -278,123 +400,7 @@ then
     startx
 fi
 EOF
-)
 #########################################ZSHRC##################################################################
-
-
-echo -e "${BKGGREEN}Installation de Arch Linux sur clé USB${ENDCOLOR}"
-
-echo -e "${CYAN}Configuration automatique de l'horodatage du système...${ENDCOLOR}"
-timedatectl set-ntp true
-
-echo -e "${CYAN}Mise à jour de la Mirrorlist...${ENDCOLOR}"
-reflector -c France -a 6 --sort rate --save /etc/pacman.d/mirrorlist
-pacman -Syy
-
-#Création et Formatage des partitions
-echo -e "${CYAN}Création des partitions sur /dev/${1}...${ENDCOLOR}"
-sgdisk -o -n 1:0:+10M -t 1:EF02 -n 2:0:+500M -t 2:EF00 -n 3:0:0 -t 3:8300 /dev/${1}
-
-echo -e "${CYAN}Formatage des partitions...${ENDCOLOR}"
-mkfs.fat -F32 /dev/${1}2
-mkfs.ext4 -O "^has_journal" /dev/${1}3        # /
-
-# montage des partitions
-echo -e "${CYAN}Montage des partitions...${ENDCOLOR}"
-mount /dev/${1}3 /mnt
-mkdir /mnt/boot
-mount /dev/${1}2 /mnt/boot
-
-# installation de base de Arch
-echo -e "${CYAN}Installation des paquets de base avec pacstrap...${ENDCOLOR}"
-pacstrap /mnt base linux linux-firmware vim git
-
-# création du fichier fstab qui décrit les points de montage
-echo -e "${CYAN}Génération de fstab...${ENDCOLOR}"
-genfstab -U -p /mnt >> /mnt/etc/fstab
-
-# on rentre dans le système
-echo -e "${CYAN}Arch-Chroot...${ENDCOLOR}"
-arch-chroot /mnt /bin/bash -x << EOF
-
-# configuration du nom de la machine et de la timezone
-echo -e "${CYAN}Configuration du nom de la machine...${ENDCOLOR}"
-echo zarchusb >> /etc/hostname
-echo -e "${CYAN}Configuration du nom de localhost...${ENDCOLOR}"
-echo -e '127.0.0.1       localhost\n::1       localhost\n127.0.1.1       zarchusb.localdomain zarchusb' >> /etc/hosts
-echo -e "${CYAN}Configuration du nom de la timezone...${ENDCOLOR}"
-ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
-hwclock --systohc
-
-# langues
-echo -e "${CYAN}Configuration de la langue...${ENDCOLOR}"
-sed -i 's|#(fr_FR.UTF-8)|(fr_FR.UTF-8)|g' /etc/locale.gen
-locale-gen
-echo 'LANG="fr_FR.UTF-8"' >> /etc/locale.conf
-export LANG=fr_FR.UTF-8
-echo -e "${CYAN}Configuration du clavier...${ENDCOLOR}"
-echo KEYMAP=fr >> /etc/vconsole.conf
-
-# création du mdp root
-echo -e "${CYAN}Désactivation du mot de passe root...${ENDCOLOR}"
-passwd -d root
-
-# création d'un environnement qui se chargera en mémoire au boot
-echo -e "${CYAN}Création d'un environnement qui se chargera en mémoire au boot...${ENDCOLOR}"
-sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|g' /etc/mkinitcpio.conf
-mkinitcpio -p linux
-
-echo -e "${CYAN}Installation des paquets nécessaires...${ENDCOLOR}"
-pacman -S --noconfirm grub efibootmgr networkmanager network-manager-applet wpa_supplicant wireless_tools dialog os-prober linux-headers mtools dosfstools bluez bluez-utils cups reflector xdg-utils xdg-user-dirs acpi base-devel mousepad kate zsh zsh-syntax-highlighting zsh-autosuggestions ufw htop testdisk smartmontools python-pipenv
-
-# Installation du bootloader GRUB.
-echo -e "${CYAN}Installation du bootloader GRUB...${ENDCOLOR}"
-grub-install --target=i386-pc --boot-directory=/boot /dev/sda --recheck
-grub-install --target=x86_64-efi --efi-directory=/boot --boot-directory=/boot --removable --recheck
-grub-mkconfig -o /boot/grub/grub.cfg # création du fichier de configuration GRUB
-
-#Activation des services
-echo -e "${CYAN}Activations des services...${ENDCOLOR}"
-systemctl enable NetworkManager
-systemctl enable bluetooth
-systemctl enable cups
-
-#configguration storage
-echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
-sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
-sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
-usbuuid="$(blkid | awk '/^\/dev\/sda3/' | cut -d ' ' -f2 | sed 's|"||g')"
-sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet '${usbuuid}'"|' /etc/default/grub
-
-
-#installation de l'environnement xorg+xinit+xfce
-echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
-pacman -S --noconfirm --needed xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller network-manager-applet leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
-
-
-echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
-cp /etc/X11/xinit/xinitrc /root/.xinitrc
-sed -i 's|twm &|#twm &|' /root/.xinitrc
-sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
-sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
-sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
-echo "exec startxfce4" >> /root/.xinitrc
-
-echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
-echo "${zshrcfile}" > /root/.zshrc ############################Ne créé toujours pas le contenu du fichier
-sudo sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
-
-echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
-ufw enable
-
-#echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
-#git clone https://aur.archlinux.org/brave-bin.git
-#cd brave-bin
-#makepkg -si
-
-exit
-
-EOF
 
 echo -e "${BKGGREEN}Installation terminée${ENDCOLOR}"
 
