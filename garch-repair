@@ -60,7 +60,7 @@ hwclock --systohc
 
 # langues
 echo -e "${CYAN}Configuration de la langue...${ENDCOLOR}"
-sed -i 's|#(fr_FR.UTF-8)|(fr_FR.UTF-8)|g' /etc/locale.gen
+sed -i 's|#(fr_FR.UTF-8)|(fr_FR.UTF-8)|' /etc/locale.gen
 locale-gen
 echo 'LANG="fr_FR.UTF-8"' >> /etc/locale.conf
 export LANG=fr_FR.UTF-8
@@ -73,7 +73,7 @@ passwd -d root
 
 # création d'un environnement qui se chargera en mémoire au boot
 echo -e "${CYAN}Création d'un environnement qui se chargera en mémoire au boot...${ENDCOLOR}"
-sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|g' /etc/mkinitcpio.conf
+sed -i 's|#HOOKS=(base udev autodetect modconf block filesystems keyboard fsck)|HOOKS=(base udev block filesystems keyboard fsck)|' /etc/mkinitcpio.conf
 mkinitcpio -p linux
 
 # Le gestionnaire de paquets logiciels est l'utilitaire "pacman" pour "package manager",
@@ -95,15 +95,30 @@ systemctl enable cups
 
 #configguration storage
 echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
-sed -i 's|#Storage=auto|Storage=volatile|g' /etc/systemd/journald.conf
-sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|g' /etc/systemd/journald.conf
+sed -i 's|#Storage=auto|Storage=volatile|' /etc/systemd/journald.conf
+sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|' /etc/systemd/journald.conf
 usbuuid="$(blkid | awk '/^\/dev\/sda3/' | cut -d ' ' -f2 | sed 's|"||g')"
 sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet '${usbuuid}'"|' /etc/default/grub
 
 
 #installation de l'environnement xorg+xinit+xfce
 #echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
-#pacman -S --noconfirm --needed xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
+pacman -S --noconfirm xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
+
+echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
+cp /etc/X11/xinit/xinitrc /root/.xinitrc
+chmod u+x /root/.xinitrc
+sed -i -e 's|twm &|#twm &|' -e 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' -e 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' -e 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
+echo "exec startxfce4" >> /root/.xinitrc
+
+echo -e "${CYAN}Configuration de Getty pour l'autologin...${ENDCOLOR}"
+sed -i -r -e '/^ExecStart=-\/sbin\/agetty -o/d' -e '/\[Unit\]/aRequires=dbus.Service' -e '/\[Unit\]/aAfter=dbus.Service' -e '/\# the VT is cleared by TTYVTDisallocate/aExecStart=' -e '/\# the VT is cleared by TTYVTDisallocate/aExecStart=-\/sbin\/agetty --autologin root --noclear %I 38400 linux' /etc/systemd/system/getty.target.wants/getty@tty1.service
+
+echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
+sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
+
+echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
+ufw enable
 
 #echo -e "${CYAN}Instalation de l'AUR YAY...${ENDCOLOR}"
 #git clone https://aur.archlinux.org/yay.git
@@ -111,20 +126,6 @@ sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAU
 #makepkg -si
 #cd
 #rm -rf yay/
-
-#echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
-#cp /etc/X11/xinit/xinitrc /root/.xinitrc
-#sed -i 's|twm &|#twm &|' /root/.xinitrc
-#sed -i 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' /root/.xinitrc
-#sed -i 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' /root/.xinitrc
-#sed -i 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
-#echo "exec startxfce4" >> /root/.xinitrc
-
-echo -e "${CYAN}Configuration de ZSH...${ENDCOLOR}"
-sudo sed -i 's|bin/bash|usr/bin/zsh|g' /etc/passwd
-
-echo -e "${CYAN}Activation du pare-feu...${ENDCOLOR}"
-ufw enable
 
 #echo -e "${CYAN}Installation de Brave...${ENDCOLOR}"
 #yay -S --nocofnirm brave
