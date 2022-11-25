@@ -29,7 +29,7 @@ sgdisk -o -n 1:0:+10M -t 1:EF02 -n 2:0:+500M -t 2:EF00 -n 3:0:0 -t 3:8300 /dev/$
 
 echo -e "${CYAN}Formatage des partitions...${ENDCOLOR}"
 mkfs.fat -F32 /dev/${1}2
-mkfs.ext4 -O "^has_journal" /dev/${1}3        # /
+mkfs.ext4 -F -O "^has_journal" /dev/${1}3        # /
 
 # montage des partitions
 echo -e "${CYAN}Montage des partitions...${ENDCOLOR}"
