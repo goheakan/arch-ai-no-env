@@ -52,9 +52,9 @@ arch-chroot /mnt /bin/bash -x << EOF
 # configuration du nom de la machine et de la timezone
 echo -e "${CYAN}Configuration du nom de la machine...${ENDCOLOR}"
 echo zarchusb >> /etc/hostname
-echo -e "${CYAN}Configuration du nom de localhost...${ENDCOLOR}"
+echo -e "${CYAN}Configuration de localhost...${ENDCOLOR}"
 echo -e '127.0.0.1       localhost\n::1       localhost\n127.0.1.1       zarchusb.localdomain zarchusb' >> /etc/hosts
-echo -e "${CYAN}Configuration du nom de la timezone...${ENDCOLOR}"
+echo -e "${CYAN}Configuration de la timezone...${ENDCOLOR}"
 ln -sf /usr/share/zoneinfo/Europe/Paris /etc/localtime
 hwclock --systohc
 
@@ -93,7 +93,7 @@ systemctl enable NetworkManager
 systemctl enable bluetooth
 systemctl enable cups
 
-#configguration storage
+#configuration storage
 echo -e "${CYAN}Configuration pour démarrage sur USB...${ENDCOLOR}"
 sed -i 's|#Storage=auto|Storage=volatile|' /etc/systemd/journald.conf
 sed -i 's|#RuntimeMaxUse=|RuntimeMaxUse=30M|' /etc/systemd/journald.conf
@@ -103,13 +103,13 @@ sed -i 's|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"|GRUB_CMDLINE_LINUX_DEFAU
 
 #installation de l'environnement xorg+xinit+xfce
 #echo -e "${CYAN}Installation de l'environnement Xorg, Xinit et XFCE...${ENDCOLOR}"
-pacman -S --noconfirm xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
+#pacman -S --noconfirm xorg xorg-xinit xfce4 parole ristretto thunar-archive-plugin thunar-media-tags-plugin xfce4-battery-plugin xfce4-datetime-plugin xfce4-mount-plugin xfce4-netload-plugin xfce4-notifyd xfce4-pulseaudio-plugin xfce4-screensaver xfce4-taskmanager xfce4-wavelan-plugin xfce4-weather-plugin xfce4-whiskermenu-plugin xfce4-xkb-plugin file-roller leafpad epdfview galculator capitaine-cursors arc-gtk-theme xdg-user-dirs-gtk
 
-echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
-cp /etc/X11/xinit/xinitrc /root/.xinitrc
-chmod u+x /root/.xinitrc
-sed -i -e 's|twm &|#twm &|' -e 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' -e 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' -e 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
-echo "exec startxfce4" >> /root/.xinitrc
+#echo -e "${CYAN}Configuration de Xinit...${ENDCOLOR}"
+#cp /etc/X11/xinit/xinitrc /root/.xinitrc
+#chmod u+x /root/.xinitrc
+#sed -i -e 's|twm &|#twm &|' -e 's|xclock -geometry 50x50-1+1 &|#xclock -geometry 50x50-1+1 &|' -e 's|xterm -geometry 80x50+494+51 &|#xterm -geometry 80x50+494+51 &|' -e 's|xterm -geometry 80x20+494-0 &|#xterm -geometry 80x20+494-0 &|' /root/.xinitrc
+#echo "exec startxfce4" >> /root/.xinitrc
 
 echo -e "${CYAN}Configuration de Getty pour l'autologin...${ENDCOLOR}"
 sed -i -r -e '/^ExecStart=-\/sbin\/agetty -o/d' -e '/\[Unit\]/aRequires=dbus.Service' -e '/\[Unit\]/aAfter=dbus.Service' -e '/\# the VT is cleared by TTYVTDisallocate/aExecStart=' -e '/\# the VT is cleared by TTYVTDisallocate/aExecStart=-\/sbin\/agetty --autologin root --noclear %I 38400 linux' /etc/systemd/system/getty.target.wants/getty@tty1.service
